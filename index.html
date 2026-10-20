@@ -1,0 +1,1310 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ile kosztował ten obrazek? — kalkulator GPT Image 2.5</title>
+<style>
+  :root{
+    --bg:#0a0c11; --card-a:#151a24; --card-b:#10141c;
+    --line:#232b3a; --line-soft:#1b2230;
+    --txt:#e9edf5; --mut:#8b97ac; --mut-2:#65718a;
+    --amber:#ffb347; --orange:#ff6a00;
+    --good:#4ade80; --warn:#fbbf24; --bad:#f87171;
+    --grad:linear-gradient(135deg,#ffc35c 0%,#ff7a1a 55%,#ff5c00 100%);
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1100px 520px at 50% -240px, rgba(255,122,26,.20), transparent 70%),
+      radial-gradient(700px 400px at 92% 0%, rgba(255,179,71,.10), transparent 65%),
+      var(--bg);
+    color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; line-height:1.5; min-height:100vh;
+  }
+  .wrap{max-width:1160px;margin:0 auto;padding:18px 20px 72px}
+
+  /* ---------- top bar ---------- */
+  .topbar{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-bottom:14px}
+  .pill{
+    display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:#0d1119;
+    color:var(--mut);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;
+    font-family:inherit;cursor:pointer;transition:.15s
+  }
+  .pill:hover{color:var(--txt);border-color:#3a465c;background:#111722}
+  .lang{display:flex;border:1px solid var(--line);border-radius:999px;background:#0d1119;padding:3px}
+  .lang button{
+    border:0;background:transparent;color:var(--mut-2);font-family:inherit;font-size:11.5px;font-weight:800;
+    padding:5px 11px;border-radius:999px;cursor:pointer;letter-spacing:.04em;transition:.15s
+  }
+  .lang button.on{background:var(--grad);color:#1c1204}
+
+  /* ---------- hero ---------- */
+  .hero{text-align:center;margin-bottom:26px}
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;padding:6px 13px 6px 10px;border-radius:999px;
+    border:1px solid rgba(255,122,26,.35);background:rgba(255,122,26,.09);
+    color:#ffcf9a;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  }
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--grad);box-shadow:0 0 10px #ff7a1a}
+  h1{font-size:clamp(25px,4.4vw,40px);line-height:1.15;margin:16px 0 10px;letter-spacing:-.025em;font-weight:800}
+  h1 .hl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:15px;max-width:660px;margin:0 auto}
+
+  /* ---------- layout ---------- */
+  .grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.8fr);gap:20px;align-items:start}
+  @media (max-width:940px){.grid{grid-template-columns:1fr}}
+  .card{
+    scroll-margin-top:22px;
+    background:linear-gradient(180deg,var(--card-a),var(--card-b));border:1px solid var(--line);
+    border-radius:18px;padding:20px;
+    box-shadow:0 18px 40px -28px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .step{
+    flex:0 0 auto;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
+    font-size:12px;font-weight:800;color:#1b1206;background:var(--grad);box-shadow:0 4px 14px -6px #ff7a1a;
+  }
+  .card-head h2{font-size:15px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .card-head .hint{margin-left:auto;font-size:11.5px;color:var(--mut-2);text-align:right}
+
+  label.fld{display:block;font-size:12px;font-weight:600;color:var(--mut);margin:0 0 6px}
+  textarea,input[type=text],input[type=number]{
+    width:100%;background:#0c1017;color:var(--txt);border:1px solid var(--line);border-radius:11px;
+    padding:11px 12px;font-size:13.5px;font-family:inherit;outline:none;transition:border-color .15s, box-shadow .15s;
+  }
+  textarea:focus,input:focus{border-color:rgba(255,122,26,.6);box-shadow:0 0 0 3px rgba(255,122,26,.12)}
+  textarea{resize:vertical;min-height:92px;line-height:1.55}
+  input[type=number]{font-family:var(--mono)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row.between{justify-content:space-between}
+  .mt10{margin-top:10px}.mt14{margin-top:14px}.mt18{margin-top:18px}
+  .micro{font-size:11.5px;color:var(--mut-2)}
+  .micro b{color:var(--mut);font-weight:600}
+  select{
+    width:100%;appearance:none;background:#0c1017;color:var(--txt);border:1px solid var(--line);
+    border-radius:11px;padding:11px 34px 11px 12px;font-size:13.5px;font-family:inherit;cursor:pointer;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5L6 6.5L11 1.5' stroke='%238b97ac' stroke-width='1.8' fill='none' stroke-linecap='round'/></svg>");
+    background-repeat:no-repeat;background-position:right 13px center;
+  }
+  select:focus{border-color:rgba(255,122,26,.6);box-shadow:0 0 0 3px rgba(255,122,26,.12);outline:none}
+
+  /* ---------- dropzone ---------- */
+  .drop{border:1.5px dashed #2b3445;border-radius:14px;padding:18px;text-align:center;background:rgba(255,255,255,.012);cursor:pointer;transition:.16s}
+  .drop:hover{border-color:#3a465c;background:rgba(255,122,26,.04)}
+  .drop.over{border-color:var(--orange);background:rgba(255,122,26,.10);transform:scale(1.005)}
+  .drop .ic{width:34px;height:34px;margin:0 auto 8px;opacity:.85}
+  .drop .t1{font-size:13px;font-weight:600}
+  .drop .t2{font-size:11.5px;color:var(--mut-2);margin-top:3px}
+
+  .refs{margin-top:12px;display:flex;flex-direction:column;gap:9px}
+  .ref{display:grid;grid-template-columns:44px 1fr auto;gap:11px;align-items:center;background:#0d1119;border:1px solid var(--line-soft);border-radius:12px;padding:9px 11px}
+  .ref img{width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--line);background:#000}
+  .ref .n1{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+  .ref .n2{font-size:11px;color:var(--mut-2);font-family:var(--mono)}
+  .role{
+    border:1px solid #3a3320;background:rgba(255,179,71,.10);color:var(--amber);border-radius:999px;
+    padding:2px 8px;font-size:10px;font-weight:800;font-family:inherit;cursor:pointer;margin-top:3px;letter-spacing:.02em
+  }
+  .role.ref{background:rgba(167,139,250,.12);border-color:#3b3355;color:#c4b5fd}
+  .tok-input{display:flex;align-items:center;gap:6px}
+  .tok-input input{width:78px;padding:6px 8px;font-size:12px;text-align:right}
+  .tok-input .u{font-size:10.5px;color:var(--mut-2)}
+  .x-btn{border:1px solid var(--line);background:#11161f;color:var(--mut);border-radius:8px;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;transition:.15s}
+  .x-btn:hover{color:#fff;border-color:#4a2a2a;background:#2a1518}
+
+  /* ---------- segmented ---------- */
+  .seg{display:flex;gap:6px;background:#0c1017;border:1px solid var(--line);border-radius:12px;padding:4px}
+  .seg button{border:0;background:transparent;color:var(--mut);border-radius:9px;padding:9px 4px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:.15s;display:flex;flex-direction:column;gap:1px;align-items:center;flex:1}
+  .seg button small{font-size:10px;font-weight:500;color:var(--mut-2);font-family:var(--mono)}
+  .seg button:hover{color:var(--txt)}
+  .seg button.on{background:var(--grad);color:#1c1204;box-shadow:0 6px 18px -10px #ff7a1a}
+  .seg button.on small{color:rgba(28,18,4,.72)}
+
+  /* ---------- size tiles ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:9px}
+  .tile{border:1px solid var(--line);background:#0c1017;border-radius:12px;padding:10px 9px;cursor:pointer;text-align:center;transition:.15s;position:relative;overflow:hidden;color:var(--txt);font-family:inherit}
+  .tile:hover{border-color:#3a465c;background:#111722}
+  .tile.on{border-color:rgba(255,122,26,.75);background:rgba(255,122,26,.10);box-shadow:0 0 0 1px rgba(255,122,26,.35) inset}
+  .tile .ratio{height:32px;display:grid;place-items:center;margin-bottom:8px}
+  .tile .ratio i{display:block;border:1.5px solid #43506a;border-radius:2px;transition:.15s;min-width:7px;min-height:7px}
+  .tile.on .ratio i{border-color:var(--amber);background:rgba(255,179,71,.16)}
+  .tile .tl{font-size:11.5px;font-weight:700}
+  .tile .td{font-size:10px;color:var(--mut-2);font-family:var(--mono);margin-top:1px}
+  .tile .tk{font-size:10px;color:var(--amber);font-family:var(--mono);margin-top:4px;opacity:.9}
+
+  .wh{display:flex;align-items:flex-end;gap:8px;margin-top:12px}
+  .wh .f{flex:1}
+  .wh .x{color:var(--mut-2);font-size:12px;padding-bottom:11px}
+  .note{font-size:11.5px;margin-top:9px;display:flex;gap:6px;align-items:flex-start}
+  .note.bad{color:var(--bad)}.note.warn{color:var(--warn)}.note.ok{color:var(--mut-2)}
+
+  /* ---------- summary ---------- */
+  .summary{position:sticky;top:20px}
+  @media (max-width:940px){.summary{position:static}}
+  .total-card{background:radial-gradient(340px 160px at 85% -30%, rgba(255,122,26,.22), transparent 70%),linear-gradient(180deg,#1a2029,#10141c);border:1px solid #2c3546}
+  .total-label{font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut-2);font-weight:700}
+  .total{font-size:clamp(34px,6vw,46px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin:6px 0 2px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+  .total-sub{font-size:12.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .hr{height:1px;background:var(--line-soft);margin:16px 0}
+  .bd{display:flex;flex-direction:column;gap:9px}
+  .bd-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:13px}
+  .bd-row .k{color:var(--txt);font-weight:600;display:flex;align-items:center;gap:7px}
+  .bd-row .k .sw{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .bd-row .v{font-family:var(--mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+  .bd-row .sub{grid-column:1/-1;font-size:11px;color:var(--mut-2);font-family:var(--mono);padding-left:15px}
+  .sw-text{background:#7dd3fc}.sw-in{background:#a78bfa}.sw-out{background:var(--amber)}.sw-part{background:#4ade80}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-size:11px;color:var(--mut);border:1px solid var(--line);background:#0d1119;padding:5px 9px;border-radius:999px;font-family:var(--mono)}
+  .chip b{color:var(--txt);font-weight:700}
+  .btn{width:100%;border:0;border-radius:12px;padding:12px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;transition:.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn.primary{background:var(--grad);color:#1c1204;box-shadow:0 12px 26px -14px #ff7a1a}
+  .btn.primary:hover{filter:brightness(1.06)}
+  .btn.ghost{background:#0d1119;border:1px solid var(--line);color:var(--mut)}
+  .btn.ghost:hover{color:var(--txt);border-color:#3a465c}
+  .btnrow{display:flex;gap:9px;margin-top:14px}
+  details.adv{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
+  details.adv summary{cursor:pointer;font-size:12px;color:var(--mut);font-weight:600;list-style:none;display:flex;align-items:center;gap:7px}
+  details.adv summary::-webkit-details-marker{display:none}
+  details.adv summary:before{content:"▸";font-size:10px;color:var(--mut-2);transition:.15s}
+  details.adv[open] summary:before{transform:rotate(90deg)}
+  details.adv .body{margin-top:11px;display:flex;flex-direction:column;gap:10px}
+
+  footer{max-width:1160px;margin:34px auto 0;padding:0 20px;color:var(--mut-2);font-size:11.5px;line-height:1.7}
+  footer b{color:var(--mut)}
+  footer a{color:#ffb877;text-decoration:none}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#1c2330;border:1px solid #33405a;color:var(--txt);padding:10px 16px;border-radius:11px;font-size:12.5px;font-weight:600;transition:.22s;box-shadow:0 20px 40px -20px #000;z-index:200}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+  /* ---------- mobile sticky total ---------- */
+  .mobar{display:none}
+  @media (max-width:940px){
+    .mobar{display:flex;align-items:center;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:40;
+      padding:11px 16px calc(11px + env(safe-area-inset-bottom));
+      background:rgba(12,16,23,.93);backdrop-filter:blur(14px);border-top:1px solid #2c3546}
+    .mobar .lbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mut-2);font-weight:700}
+    .mobar .amt{margin-left:auto;font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .mobar .go{border:1px solid var(--line);background:#11161f;color:var(--mut);border-radius:9px;padding:7px 10px;font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer}
+    body{padding-bottom:66px}
+  }
+
+  /* ============ TOUR ============ */
+  #tourRoot{position:fixed;inset:0;z-index:300;display:none}
+  #tourRoot.on{display:block}
+  #tourSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .tour-card{
+    position:absolute;width:min(400px,calc(100vw - 28px));
+    background:linear-gradient(180deg,#1b2230,#12171f);
+    border:1px solid #3a465c;border-radius:16px;padding:16px 16px 14px;
+    box-shadow:0 30px 70px -24px rgba(0,0,0,.95), 0 0 0 1px rgba(255,179,71,.08) inset;
+    max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;
+  }
+  .tour-card:after{content:"";position:absolute;inset:0;border-radius:16px;pointer-events:none;box-shadow:0 0 0 1px rgba(255,255,255,.03) inset}
+  .tour-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+  .tour-count{
+    font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#1c1204;background:var(--grad);
+    padding:3px 8px;border-radius:999px
+  }
+  .tour-dots{display:flex;gap:4px;margin-left:auto}
+  .tour-dots i{width:5px;height:5px;border-radius:50%;background:#3b465c;display:block}
+  .tour-dots i.on{background:var(--amber);box-shadow:0 0 8px rgba(255,179,71,.8)}
+  .tour-x{border:0;background:transparent;color:var(--mut-2);font-size:18px;line-height:1;cursor:pointer;padding:0 2px;margin-left:6px}
+  .tour-x:hover{color:#fff}
+  .tour-card h3{font-size:16px;margin:0 0 6px;letter-spacing:-.01em}
+  .tour-card p{margin:0;font-size:13px;color:#c3ccdb;line-height:1.55}
+  .tour-card p b{color:#fff}
+  .tour-art{margin:11px 0 2px;background:rgba(0,0,0,.25);border:1px solid var(--line-soft);border-radius:11px;padding:8px}
+  .tour-art svg{display:block;width:100%;height:auto}
+  .tour-actions{display:flex;align-items:center;gap:8px;margin-top:13px}
+  .tour-skip{border:0;background:transparent;color:var(--mut-2);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:8px 2px}
+  .tour-skip:hover{color:var(--mut)}
+  .tour-nav{margin-left:auto;display:flex;gap:7px}
+  .tour-btn{
+    border:1px solid var(--line);background:#0e131b;color:var(--mut);border-radius:10px;padding:9px 14px;
+    font-family:inherit;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s
+  }
+  .tour-btn:hover{color:var(--txt);border-color:#46536c}
+  .tour-btn.go{background:var(--grad);border:0;color:#1c1204;box-shadow:0 10px 22px -12px #ff7a1a}
+  .tour-btn.go:hover{filter:brightness(1.07)}
+  @keyframes pulse{0%{opacity:.95;transform:scale(1)}70%{opacity:0;transform:scale(1.06)}100%{opacity:0}}
+  #tourPulse{transform-box:fill-box;transform-origin:center;animation:pulse 2s ease-out infinite}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <button class="pill" id="tourBtn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L2 8l10 5 10-5-10-5z"/><path d="M4 10v6c0 1.5 3.6 3 8 3s8-1.5 8-3v-6"/></svg>
+      <span data-i18n="tour_btn">Samouczek</span>
+    </button>
+    <div class="lang" id="lang">
+      <button data-lang="pl">PL</button>
+      <button data-lang="en">EN</button>
+    </div>
+  </div>
+
+  <header class="hero">
+    <span class="badge"><span class="dot"></span><span data-i18n="badge">gpt-image-2.5 · Sunburst i Flare · oficjalne ceny</span></span>
+    <h1 data-i18n-html="h1">Ile <span class="hl">naprawdę kosztował</span> ten obrazek?</h1>
+    <p class="sub" data-i18n="sub">Wrzuć obrazki, wybierz rozmiar i jakość, wklej tekst. Bez liczenia tokenów i bez dashboardów — od razu widać, ile policzy OpenAI.</p>
+  </header>
+
+  <div class="grid">
+    <div>
+      <!-- 1. prompt -->
+      <section class="card">
+        <div class="card-head">
+          <span class="step">1</span>
+          <h2 data-i18n="s1_title">Tekst (prompt)</h2>
+          <span class="hint" id="promptMeta" data-i18n="optional">opcjonalne</span>
+        </div>
+        <label class="fld" for="prompt" data-i18n="s1_label">Wklej tekst, który wysłałeś do modelu</label>
+        <textarea id="prompt" data-i18n-ph="s1_ph"></textarea>
+        <div class="row between mt10">
+          <span class="micro" id="promptChars"></span>
+          <span class="micro" data-i18n-html="s1_rate">Tekst kosztuje <b>5 $ / 1 mln tokenów</b></span>
+        </div>
+        <details class="adv">
+          <summary data-i18n="s1_adv">Zaawansowane: dokładna liczba tokenów</summary>
+          <div class="body">
+            <label class="fld" for="textTokensOverride" data-i18n="s1_ovlabel">Tokeny tekstu (z odpowiedzi API)</label>
+            <input type="number" id="textTokensOverride" min="0" step="1" placeholder="184" />
+            <span class="micro" data-i18n-html="s1_ovhint">Zostaw puste, żeby użyć szacunku. API podaje to jako <b>usage.input_tokens_details.text_tokens</b>.</span>
+          </div>
+        </details>
+      </section>
+
+      <!-- 2. images -->
+      <section class="card" id="cardRefs">
+        <div class="card-head">
+          <span class="step">2</span>
+          <h2 data-i18n="s2_title">Obrazki</h2>
+          <span class="hint" id="refHint"></span>
+        </div>
+        <div class="drop" id="drop" tabindex="0" role="button">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#ffb347" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.5" y="3.5" width="19" height="17" rx="3"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 15.5l-4.5-4.2L7 20"/>
+          </svg>
+          <div class="t1" data-i18n="s2_drop1">Przeciągnij obrazek, kliknij albo wklej (Ctrl+V)</div>
+          <div class="t2" data-i18n="s2_drop2">PNG · JPEG · WebP — piksele policzymy sami</div>
+          <input type="file" id="file" accept="image/*" multiple class="sr" />
+        </div>
+        <div class="refs" id="refs"></div>
+        <div class="note ok" id="refNote"></div>
+      </section>
+
+      <!-- 3. output -->
+      <section class="card">
+        <div class="card-head">
+          <span class="step">3</span>
+          <h2 data-i18n="s3_title">Obrazek wynikowy</h2>
+          <span class="hint" id="outHint"></span>
+        </div>
+        <label class="fld" data-i18n="s3_size">Rozmiar</label>
+        <div class="tiles" id="tiles"></div>
+        <div class="wh">
+          <div class="f"><label class="fld" for="w" data-i18n="s3_w">Szerokość (px)</label><input type="number" id="w" value="1024" min="16" step="16" /></div>
+          <div class="x">×</div>
+          <div class="f"><label class="fld" for="h" data-i18n="s3_h">Wysokość (px)</label><input type="number" id="h" value="1024" min="16" step="16" /></div>
+        </div>
+        <div class="note ok" id="sizeNote"></div>
+        <div class="mt18">
+          <label class="fld" data-i18n="s3_q">Jakość</label>
+          <div class="seg" id="quality"></div>
+        </div>
+        <div class="row mt14" style="gap:14px">
+          <div style="flex:1;min-width:130px">
+            <label class="fld" for="n" data-i18n="s3_n">Liczba obrazków (n)</label>
+            <input type="number" id="n" value="1" min="1" max="10" step="1" />
+          </div>
+          <div style="flex:2;min-width:170px">
+            <label class="fld" for="partials" data-i18n="s3_p">Podglądy na żywo</label>
+            <select id="partials">
+              <option value="0" data-i18n="p0">Brak (domyślnie)</option>
+              <option value="1" data-i18n="p1">1 podgląd</option>
+              <option value="2" data-i18n="p2">2 podglądy</option>
+              <option value="3" data-i18n="p3">3 podglądy</option>
+            </select>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="card total-card summary" id="summary">
+        <div class="row between">
+          <span class="total-label" data-i18n="sum_label">Twoja opłata</span>
+          <select id="model" style="width:auto;padding:6px 30px 6px 10px;font-size:11.5px;border-radius:8px">
+            <option value="sunburst">Sunburst</option>
+            <option value="flare">Flare</option>
+          </select>
+        </div>
+        <div class="total" id="total">$0.000000</div>
+        <div class="total-sub" id="totalSub"></div>
+        <div class="hr"></div>
+        <div class="bd" id="breakdown"></div>
+        <div class="chips" id="chips"></div>
+        <div class="hr"></div>
+        <div class="bd">
+          <div class="bd-row"><span class="k" data-i18n="sum_std">Standard</span><span class="v" id="stdCost">—</span></div>
+          <div class="bd-row"><span class="k"><span data-i18n="sum_batch">Batch API</span> <span class="micro" data-i18n="sum_batch_note">(½ ceny, do 24 h)</span></span><span class="v" id="batchCost">—</span></div>
+        </div>
+        <div class="btnrow">
+          <button class="btn primary" id="copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+            <span data-i18n="sum_copy">Kopiuj podsumowanie</span>
+          </button>
+        </div>
+        <div class="btnrow">
+          <button class="btn ghost" id="demo" data-i18n="sum_demo">Wczytaj mój poprzedni przykład (181 / 2 056 / 1 756)</button>
+        </div>
+        <details class="adv">
+          <summary data-i18n="sum_adv">Zaawansowane: wklej liczby z pliku usage</summary>
+          <div class="body">
+            <label class="fld" for="usageBlob" data-i18n="sum_adv_label">Wklej cokolwiek, co zawiera pola usage</label>
+            <textarea id="usageBlob" style="min-height:74px;font-family:var(--mono);font-size:11.5px" placeholder='"input_tokens_details": {"text_tokens": 181, "image_tokens": 2056}, "output_tokens": 1756'></textarea>
+            <button class="btn ghost" id="parseUsage" style="padding:9px" data-i18n="sum_adv_btn">Wypełnij z wklejonych liczb</button>
+            <span class="micro" data-i18n-html="sum_adv_hint">Szuka pól <b>text_tokens</b>, <b>image_tokens</b> i <b>output_tokens</b>.</span>
+          </div>
+        </details>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  <div data-i18n-html="foot1"></div>
+  <div data-i18n-html="foot2"></div>
+  <div data-i18n-html="foot3"></div>
+  <div data-i18n-html="foot4"></div>
+</footer>
+
+<div class="mobar">
+  <span class="lbl" data-i18n="sum_label">Twoja opłata</span>
+  <button class="go" id="moGo" data-i18n="mo_go">Szczegóły ↓</button>
+  <span class="amt" id="moTotal">$0.000000</span>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ======================= TOUR ======================= -->
+<div id="tourRoot" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <svg id="tourSvg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <mask id="tourMask">
+        <rect id="tourMaskFull" x="0" y="0" width="100%" height="100%" fill="white" />
+        <rect id="tourHole" x="0" y="0" width="0" height="0" rx="14" fill="black" />
+      </mask>
+      <marker id="tourHead" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M1 1 L11 6 L1 11 z" fill="#ffb347" />
+      </marker>
+    </defs>
+    <rect id="tourDim" x="0" y="0" width="100%" height="100%" fill="rgba(5,7,11,.76)" mask="url(#tourMask)" />
+    <rect id="tourPulse" x="0" y="0" width="0" height="0" rx="14" fill="none" stroke="#ffb347" stroke-width="2" opacity="0" />
+    <rect id="tourRing" x="0" y="0" width="0" height="0" rx="14" fill="none" stroke="#ffb347" stroke-width="2" opacity="0" />
+    <path id="tourArrow" fill="none" stroke="#ffb347" stroke-width="2.5" stroke-linecap="round" marker-end="url(#tourHead)" opacity="0" />
+  </svg>
+
+  <div class="tour-card" id="tourCard">
+    <div class="tour-top">
+      <span class="tour-count" id="tourCount">1 / 8</span>
+      <span class="tour-dots" id="tourDots"></span>
+      <button class="tour-x" id="tourX" aria-label="Zamknij">×</button>
+    </div>
+    <h3 id="tourTitle">Cześć!</h3>
+    <p id="tourBody"></p>
+    <div class="tour-art" id="tourArt" style="display:none"></div>
+    <div class="tour-actions">
+      <button class="tour-skip" id="tourSkip">Pomiń samouczek</button>
+      <div class="tour-nav">
+        <button class="tour-btn" id="tourPrev">Wstecz</button>
+        <button class="tour-btn go" id="tourNext">Dalej</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================
+     I18N
+  ========================================================= */
+  const I18N = {
+    pl: {
+      html_lang:"pl",
+      tour_btn:"Samouczek",
+      badge:"gpt-image-2.5 · Sunburst i Flare · oficjalne ceny",
+      h1:'Ile <span class="hl">naprawdę kosztował</span> ten obrazek?',
+      sub:"Wrzuć obrazki, wybierz rozmiar i jakość, wklej tekst. Bez liczenia tokenów i bez dashboardów — od razu widać, ile policzy OpenAI.",
+      optional:"opcjonalne",
+      s1_title:"Tekst (prompt)",
+      s1_label:"Wklej tekst, który wysłałeś do modelu",
+      s1_ph:"Słońce rozbłyskujące nad spokojnym miastem, zdjęcie edytorskie, ciepłe bursztynowe światło…",
+      s1_rate:'Tekst kosztuje <b>5 $ / 1 mln tokenów</b>',
+      s1_adv:"Zaawansowane: dokładna liczba tokenów",
+      s1_ovlabel:"Tokeny tekstu (z odpowiedzi API)",
+      s1_ovhint:'Zostaw puste, żeby użyć szacunku. API podaje to jako <b>usage.input_tokens_details.text_tokens</b>.',
+      s1_meta:"{tok} tok · {cost}",
+      s1_chars:"{n} znaków · ≈ {tok} tokenów",
+
+      s2_title:"Obrazki",
+      s2_hint:"opcjonalne · {n} / 16",
+      s2_drop1:"Przeciągnij obrazek, kliknij albo wklej (Ctrl+V)",
+      s2_drop2:"PNG · JPEG · WebP — piksele policzymy sami",
+      role_base:"Obrazek do zmiany",
+      role_ref:"Wzór / inspiracja",
+      role_base_title:"Kliknij, żeby zmienić na „wzór”",
+      role_ref_title:"Kliknij, żeby zmienić na „obrazek do zmiany”",
+      ref_px_est:"{w} × {h} px · szacunek",
+      ref_px_ovr:"{w} × {h} px · wpisane ręcznie",
+      ref_none:'Obrazki są liczone jako <b>image input</b> (8 $ / 1 mln tokenów). Bez obrazków to zwykłe generowanie z tekstu.',
+      ref_some:"{n} obrazek/obrazy ≈ <b>{tok}</b> tokenów wejściowych — to <b>{cost}</b>, czyli {pct}% tej odpowiedzi.",
+
+      s3_title:"Obrazek wynikowy",
+      s3_size:"Rozmiar",
+      s3_w:"Szerokość (px)",
+      s3_h:"Wysokość (px)",
+      s3_q:"Jakość",
+      s3_n:"Liczba obrazków (n)",
+      s3_p:"Podglądy na żywo",
+      out_hint:"{tok} tokenów wyjścia · {cost} za sztukę",
+      size_ok:"<b>{px}</b> pikseli · {ar}:1 · rozmiar jest OK.",
+      size_bad:"{list} — API może odrzucić ten rozmiar.",
+      size_warn_mul:"szerokość i wysokość muszą być wielokrotnością 16",
+      size_warn_long:"najdłuższy bok musi być ≤ 3840",
+      size_warn_ar:"proporcje muszą być między 1:3 a 3:1",
+      size_warn_min:"za mało pikseli (minimum 655 360)",
+      size_warn_max:"za dużo pikseli (maksimum 8 294 400)",
+      p0:"Brak (domyślnie)", p1:"1 podgląd", p2:"2 podglądy", p3:"3 podglądy",
+
+      q_low:"Niska", q_medium:"Średnia", q_high:"Wysoka", q_xhigh:"B. wysoka", q_max:"Maksymalna",
+
+      pr_square:"Kwadrat", pr_landscape:"Poziom", pr_portrait:"Pion", pr_wide:"Szeroki 16:9",
+      pr_story:"Story 9:16", pr_45:"Kwadrat 4:5", pr_2ksq:"Kwadrat 2K", pr_2kwide:"Szeroki 2K",
+      pr_4kwide:"Szeroki 4K", pr_4ktall:"Wysoki 4K",
+
+      sum_label:"Twoja opłata",
+      sum_per_image:"za obrazek · {tok} tokenów",
+      sum_per_image_n:"{cost} za obrazek · {tok} tokenów",
+      bd_text:"Tekst wejściowy", bd_in:"Obrazki wejściowe", bd_out:"Obrazek wynikowy", bd_part:"Podglądy na żywo",
+      bd_sub:"{tok} tok × {rate}/1M",
+      bd_sub_n:"{tok} tok · {per} × {n} × {rate}/1M",
+      sum_std:"Standard",
+      sum_batch:"Batch API", sum_batch_note:"(½ ceny, do 24 h)",
+      sum_copy:"Kopiuj podsumowanie",
+      sum_demo:"Wczytaj mój poprzedni przykład (181 / 2 056 / 1 756)",
+      sum_adv:"Zaawansowane: wklej liczby z pliku usage",
+      sum_adv_label:"Wklej cokolwiek, co zawiera pola usage",
+      sum_adv_btn:"Wypełnij z wklejonych liczb",
+      sum_adv_hint:'Szuka pól <b>text_tokens</b>, <b>image_tokens</b> i <b>output_tokens</b>.',
+      chip_q:"jakość {q}", chip_out:"wyjście {tok} tok", chip_imgs:"{n} obrazków", chip_ref:"{n} obrazek",
+      mo_go:"Szczegóły ↓",
+
+      copy_title:"gpt-image-2.5-{m} — szacowany koszt",
+      copy_line1:"Rozmiar: {w}×{h} · jakość: {q} · obrazków: {n}",
+      copy_text:"Tekst wejściowy:", copy_in:"Obrazki wejściowe:", copy_out:"Obrazek wynikowy:",
+      copy_part:"Podglądy:", copy_total:"RAZEM:", copy_batch:"Batch API:",
+
+      toast_copied:"Skopiowano podsumowanie",
+      toast_copied_usage:"Wypełniono {n} wartości z Twojego usage",
+      toast_no_usage:"Nie znalazłem pól usage",
+      toast_paste_first:"Najpierw coś wklej",
+      toast_ref_limit:"Limit to 16 obrazków",
+      toast_from_clip:"Obrazek dodany ze schowka",
+      toast_demo:"Wczytano Twój poprzedni przykład — $0.070033",
+      toast_same_rates:"Sunburst i Flare mają identyczne ceny tokenów",
+
+      foot1:'<b>Ceny — OpenAI, tier Standard, za 1 mln tokenów (sprawdzone 20.10.2026):</b> <code>gpt-image-2.5-sunburst</code> i <code>-flare</code>: obrazki wejściowe 8,00 $ (z cache 2,00 $), tekst wejściowy 5,00 $ (z cache 1,25 $), obrazki wyjściowe 30,00 $. Batch = połowa ceny. Tekst wyjściowy nie jest liczony.',
+      foot2:'<b>Tokeny wyjścia</b> liczy wzór z oficjalnego kalkulatora OpenAI (współczynniki 16/24/48/64/96 × współczynnik proporcji × (2 000 000 + w·h) / 4 000 000) — zgadza się co do tokena: 1 024² wysoka = 1 756, 1 536×1 024 wysoka = 1 372, 3 840×2 160 maks. = 13 342.',
+      foot3:'<b>Tokeny obrazków wejściowych</b> to szacunek na siatce 32 px z maks. 2× powiększeniem małych obrazków i limitem liczby pól (pomiary społeczności: 1 024² ≈ 1 024 tokenów, 1 536² ≈ 1 521, 2 048×1 024 ≈ 1 458). OpenAI tego wzoru nie publikuje — traktuj to jako ±10% i wpisz dokładną liczbę, jeśli ją masz.',
+      foot4:'Źródła: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">cennik OpenAI</a> · <a href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener">przewodnik po generowaniu obrazów</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst" target="_blank" rel="noopener">strona modelu Sunburst</a>.',
+
+      /* ---- tour ---- */
+      t_skip:"Pomiń samouczek", t_prev:"Wstecz", t_next:"Dalej", t_start:"Zaczynamy!", t_done:"Gotowe!",
+      t_close:"Zamknij",
+      tour:[
+        { art:"hello",
+          title:"Cześć! 👋",
+          body:"Ten program policzy, ile OpenAI skasuje Cię za <b>jeden obrazek</b>. Klikaj <b>Dalej</b> — pokażę Ci krok po kroku, co gdzie wkleić." },
+        { target:"#prompt", art:null,
+          title:"Krok 1 · Tekst",
+          body:"Tutaj wklejasz tekst, który napisałeś dla modelu — czyli <b>co ma być na obrazku</b>. Np. „pies astronauta na Księżycu, komiks”. Nie masz tekstu? Zostaw puste." },
+        { target:"#drop", art:"change",
+          title:"Krok 2 · Obrazek do zmiany",
+          body:"Masz <b>swoje zdjęcie</b> i chcesz je przerobić? Wrzuć je tutaj: przeciągnij, kliknij albo wklej z <b>Ctrl+V</b>. To jest obrazek, <b>który zmieniamy</b>." },
+        { target:"#cardRefs", art:"inspiration",
+          title:"Krok 2b · Wzór (drugi obrazek)",
+          body:"Skąd model ma wiedzieć, <b>na co</b> to zmienić? Dodaj drugi obrazek — wzór. Przykład: pierwszy = Twój pies, drugi = pies narysowany jak w komiksie. Model łączy je w jedno.<br><br>Wszystkie obrazki kosztują tyle samo (8 $ / 1 mln tokenów)." },
+        { target:"#tiles", art:null,
+          title:"Krok 3 · Rozmiar",
+          body:"Wybierz, jak duży ma być wynik: kwadrat, panorama, story… Każdy kafelek od razu pokazuje <b>ile będzie kosztował</b>." },
+        { target:"#quality", art:null,
+          title:"Jakość",
+          body:"<b>Niska</b> = szybki szkic, tanio. <b>Maksymalna</b> = najładniej i najdrożej. Klikaj i patrz, jak zmienia się cena." },
+        { target:"#summary", art:null,
+          title:"Tu jest cena 💰",
+          body:"Zawsze widzisz <b>ile zapłacisz</b> i z czego to wynika. Na dole jest też <b>Batch API</b> — pół ceny, ale trzeba poczekać do 24 godzin." },
+        { art:"bye",
+          title:"To wszystko! 🎉",
+          body:"Możesz mnie wyłączyć i liczyć. Samouczek włączysz ponownie przyciskiem <b>„Samouczek”</b> u góry, a język zmienisz obok (PL / EN)." }
+      ]
+    },
+
+    en: {
+      html_lang:"en",
+      tour_btn:"Tutorial",
+      badge:"gpt-image-2.5 · Sunburst & Flare · official rates",
+      h1:'What did that image <span class="hl">actually cost?</span>',
+      sub:"Drop your images, pick a size and quality, paste the prompt. No token maths, no dashboards — just the number OpenAI billed.",
+      optional:"optional",
+      s1_title:"Prompt text",
+      s1_label:"Paste the prompt you sent",
+      s1_ph:"A sunburst over a quiet city, editorial photography, warm amber light…",
+      s1_rate:'Text input billed at <b>$5 / 1M tokens</b>',
+      s1_adv:"Advanced: exact token count",
+      s1_ovlabel:"Text input tokens (from the API response)",
+      s1_ovhint:'Leave empty to use the estimate. The API reports it as <b>usage.input_tokens_details.text_tokens</b>.',
+      s1_meta:"{tok} tok · {cost}",
+      s1_chars:"{n} characters · ≈ {tok} tokens",
+
+      s2_title:"Images",
+      s2_hint:"optional · {n} / 16",
+      s2_drop1:"Drag an image, click, or paste (Ctrl+V)",
+      s2_drop2:"PNG · JPEG · WebP — we count the pixels for you",
+      role_base:"Image to change",
+      role_ref:"Reference",
+      role_base_title:"Click to mark as a reference",
+      role_ref_title:"Click to mark as the image to change",
+      ref_px_est:"{w} × {h} px · estimated",
+      ref_px_ovr:"{w} × {h} px · overridden",
+      ref_none:'Images are billed as <b>image input</b> ($8 / 1M tokens). Leave empty for plain text-to-image.',
+      ref_some:"{n} reference image(s) ≈ <b>{tok}</b> input tokens — that is <b>{cost}</b>, {pct}% of this call.",
+
+      s3_title:"Output image",
+      s3_size:"Size",
+      s3_w:"Width (px)",
+      s3_h:"Height (px)",
+      s3_q:"Quality",
+      s3_n:"Images (n)",
+      s3_p:"Streamed previews",
+      out_hint:"{tok} output tokens · {cost} each",
+      size_ok:"<b>{px}</b> pixels · {ar}:1 · valid size.",
+      size_bad:"{list} — the API may reject this size.",
+      size_warn_mul:"width and height must be multiples of 16",
+      size_warn_long:"longest edge must be ≤ 3840",
+      size_warn_ar:"aspect ratio must be between 1:3 and 3:1",
+      size_warn_min:"too few pixels (minimum 655,360)",
+      size_warn_max:"too many pixels (maximum 8,294,400)",
+      p0:"None (default)", p1:"1 partial image", p2:"2 partial images", p3:"3 partial images",
+
+      q_low:"Low", q_medium:"Medium", q_high:"High", q_xhigh:"X-High", q_max:"Max",
+
+      pr_square:"Square", pr_landscape:"Landscape", pr_portrait:"Portrait", pr_wide:"Wide 16:9",
+      pr_story:"Story 9:16", pr_45:"Square 4:5", pr_2ksq:"2K square", pr_2kwide:"2K wide",
+      pr_4kwide:"4K wide", pr_4ktall:"4K tall",
+
+      sum_label:"Your charge",
+      sum_per_image:"per image · {tok} tokens",
+      sum_per_image_n:"{cost} per image · {tok} tokens",
+      bd_text:"Text input", bd_in:"Image input", bd_out:"Image output", bd_part:"Streamed previews",
+      bd_sub:"{tok} tok × {rate}/1M",
+      bd_sub_n:"{tok} tok · {per} × {n} × {rate}/1M",
+      sum_std:"Standard",
+      sum_batch:"Batch API", sum_batch_note:"(½ price, ≤24 h)",
+      sum_copy:"Copy summary",
+      sum_demo:"Load my earlier call (181 / 2,056 / 1,756)",
+      sum_adv:"Advanced: paste usage numbers",
+      sum_adv_label:"Paste anything containing the usage fields",
+      sum_adv_btn:"Fill from pasted usage",
+      sum_adv_hint:'Reads <b>text_tokens</b>, <b>image_tokens</b> and <b>output_tokens</b> if found.',
+      chip_q:"quality {q}", chip_out:"output {tok} tok", chip_imgs:"{n} images", chip_ref:"{n} ref image",
+      mo_go:"Details ↓",
+
+      copy_title:"gpt-image-2.5-{m} — cost estimate",
+      copy_line1:"Size: {w}×{h} · quality: {q} · images: {n}",
+      copy_text:"Text input:", copy_in:"Image input:", copy_out:"Image output:",
+      copy_part:"Previews:", copy_total:"TOTAL:", copy_batch:"Batch API:",
+
+      toast_copied:"Summary copied",
+      toast_copied_usage:"Filled {n} value(s) from your usage",
+      toast_no_usage:"No usage fields found",
+      toast_paste_first:"Paste something first",
+      toast_ref_limit:"Reference limit is 16 images",
+      toast_from_clip:"Image added from clipboard",
+      toast_demo:"Loaded your earlier call — $0.070033",
+      toast_same_rates:"Sunburst and Flare share identical token rates",
+
+      foot1:'<b>Rates — OpenAI Standard tier, per 1M tokens (checked 20 Oct 2026):</b> <code>gpt-image-2.5-sunburst</code> and <code>-flare</code>: image input $8.00 (cached $2.00), text input $5.00 (cached $1.25), image output $30.00. Batch halves every rate. Text output is not billed.',
+      foot2:'<b>Output tokens</b> use the formula from OpenAI\u2019s own calculator (16/24/48/64/96 axis factors × aspect factor × (2,000,000 + w·h) / 4,000,000) — it reproduces OpenAI\u2019s numbers exactly: 1,024² high = 1,756, 1,536×1,024 high = 1,372, 3,840×2,160 max = 13,342.',
+      foot3:'<b>Input-image tokens</b> are estimated on a 32 px patch grid with up to 2× upscaling of small images and a patch ceiling (community-measured: 1,024² ≈ 1,024 tokens, 1,536² ≈ 1,521, 2,048×1,024 ≈ 1,458). OpenAI does not publish this rule, so treat it as ±10% and use the override field for an exact bill.',
+      foot4:'Sources: <a href="https://developers.openai.com/api/docs/pricing" target="_blank" rel="noopener">OpenAI API pricing</a> · <a href="https://developers.openai.com/api/docs/guides/image-generation" target="_blank" rel="noopener">image generation guide</a> · <a href="https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst" target="_blank" rel="noopener">Sunburst model page</a>.',
+
+      t_skip:"Skip tutorial", t_prev:"Back", t_next:"Next", t_start:"Let\u2019s go!", t_done:"Done!",
+      t_close:"Close",
+      tour:[
+        { art:"hello",
+          title:"Hi there! 👋",
+          body:"This app works out how much OpenAI charges for <b>one image</b>. Tap <b>Next</b> and I\u2019ll show you what goes where." },
+        { target:"#prompt", art:null,
+          title:"Step 1 · The words",
+          body:"Paste the words you gave the model — <b>what the picture should be</b>. Like “an astronaut dog on the Moon, comic style”. No words? Leave it empty." },
+        { target:"#drop", art:"change",
+          title:"Step 2 · The image you change",
+          body:"Got <b>your own photo</b> and want it changed? Drop it here — drag, click, or paste with <b>Ctrl+V</b>. This is the picture <b>you are changing</b>." },
+        { target:"#cardRefs", art:"inspiration",
+          title:"Step 2b · The “make it like this” image",
+          body:"How does the model know <b>what</b> to change it into? Add a second picture as a reference. Example: picture one = your dog, picture two = a dog drawn like a comic. The model mixes them.<br><br>Every picture costs the same (8 $ / 1M tokens)." },
+        { target:"#tiles", art:null,
+          title:"Step 3 · The size",
+          body:"Pick how big the result should be: square, wide, story… Each tile already shows <b>what it will cost</b>." },
+        { target:"#quality", art:null,
+          title:"Quality",
+          body:"<b>Low</b> = quick sketch, cheap. <b>Max</b> = prettiest and priciest. Click them and watch the price change." },
+        { target:"#summary", art:null,
+          title:"Here is the price 💰",
+          body:"You always see <b>what you will pay</b> and why. At the bottom there is <b>Batch API</b> too — half price, but it can take up to 24 hours." },
+        { art:"bye",
+          title:"That\u2019s it! 🎉",
+          body:"Turn me off and start counting. Bring the tutorial back with the <b>“Tutorial”</b> button at the top, and switch language next to it (PL / EN)." }
+      ]
+    }
+  };
+
+  /* =========================================================
+     RATES + FORMULAS
+  ========================================================= */
+  const RATES = {
+    textIn:{std:5.00,batch:2.50}, imageIn:{std:8.00,batch:4.00}, imageOut:{std:30.00,batch:15.00}
+  };
+  const AXIS = { low:16, medium:24, high:48, xhigh:64, max:96 };
+
+  function outputTokens(w,h,quality){
+    const p = AXIS[quality]; if(!p) return 0;
+    const long = Math.max(w,h), short = Math.min(w,h);
+    const s = p / (long/short), f = Math.floor(s), frac = s - f;
+    const q = Math.abs(frac-0.5) < 1e-9 ? (f % 2 === 0 ? f : f+1) : Math.round(s);
+    return Math.ceil(p * q * (2e6 + w*h) / 4e6);
+  }
+
+  const PATCH = 32, UPSCALE_TARGET = 1024, MAX_UPSCALE = 2, PATCH_BUDGET = 1536;
+  function inputImageTokens(w,h){
+    if(!w || !h) return 0;
+    const long = Math.max(w,h);
+    let sc = long < UPSCALE_TARGET ? Math.min(MAX_UPSCALE, UPSCALE_TARGET/long) : 1;
+    let W = w*sc, H = h*sc;
+    let pw = Math.ceil(W/PATCH), ph = Math.ceil(H/PATCH);
+    if (pw*ph > PATCH_BUDGET){
+      const k = Math.sqrt(PATCH_BUDGET/(pw*ph));
+      W *= k; H *= k;
+      pw = Math.ceil(W/PATCH); ph = Math.ceil(H/PATCH);
+      while (pw*ph > PATCH_BUDGET && (pw>1 || ph>1)){ if(pw>=ph) pw--; else ph--; }
+    }
+    return Math.max(1, pw*ph);
+  }
+
+  function estimateTextTokens(text){
+    const s = (text||"").trim(); if(!s) return 0;
+    const chunks = s.match(/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+|[0-9]+|\s+|[^\s]/g) || [];
+    let t = 0;
+    for(const c of chunks){
+      if(/^\s+$/.test(c)) t += 0.1*c.length;
+      else if(/^[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]+$/.test(c)) t += Math.max(1, Math.ceil(c.length/4.2));
+      else if(/^[0-9]+$/.test(c)) t += Math.ceil(c.length/2.5);
+      else t += 1;
+    }
+    // non-ASCII (Polish diacritics) tokenise worse — take the safer of the two
+    const byChars = Math.ceil(s.length/3.4);
+    return Math.max(1, Math.round(Math.max(t, byChars)));
+  }
+
+  /* =========================================================
+     STATE
+  ========================================================= */
+  const PRESETS = [
+    {key:"pr_square", w:1024, h:1024},
+    {key:"pr_landscape", w:1536, h:1024},
+    {key:"pr_portrait", w:1024, h:1536},
+    {key:"pr_wide", w:1536, h:864},
+    {key:"pr_story", w:864, h:1536},
+    {key:"pr_45", w:1024, h:1280},
+    {key:"pr_2ksq", w:2048, h:2048},
+    {key:"pr_2kwide", w:2048, h:1152},
+    {key:"pr_4kwide", w:3840, h:2160},
+    {key:"pr_4ktall", w:2160, h:3840}
+  ];
+  const QUALITIES = ["low","medium","high","xhigh","max"];
+
+  const S = {
+    lang:"pl",
+    prompt:"",
+    textTokensOverride:null,
+    refs:[],
+    w:1024, h:1024, presetKey:"pr_square",
+    quality:"high", n:1, partials:0
+  };
+
+  const $ = id => document.getElementById(id);
+  let LOC = "pl-PL";
+  const nf = n => Number(n).toLocaleString(LOC);
+  function t(key, vars){
+    let s = (I18N[S.lang] && I18N[S.lang][key]);
+    if (s === undefined) s = I18N.en[key];
+    if (s === undefined) return key;
+    if (vars) for (const k in vars) s = s.replace(new RegExp("\\{"+k+"\\}","g"), vars[k]);
+    return s;
+  }
+  const money = v => !isFinite(v) ? "—" : v === 0 ? "$0.00" : v < 1 ? "$"+v.toFixed(6) : v < 100 ? "$"+v.toFixed(4) : "$"+v.toFixed(2);
+  const moneyLong = v => "$"+Number(v).toFixed(6);
+  const moneyShort = v => v === 0 ? "$0" : v < 0.01 ? "$"+v.toFixed(5) : v < 1 ? "$"+v.toFixed(4) : "$"+v.toFixed(2);
+
+  function toast(msg){
+    const el = $("toast");
+    el.textContent = msg; el.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>el.classList.remove("show"), 1700);
+  }
+
+  /* =========================================================
+     COMPUTE
+  ========================================================= */
+  function compute(){
+    const tier = "std";
+    const textTokens = (S.textTokensOverride !== null && S.textTokensOverride !== "")
+      ? Math.max(0, Math.round(Number(S.textTokensOverride)))
+      : estimateTextTokens(S.prompt);
+
+    const refRows = S.refs.map(r => {
+      const est = inputImageTokens(r.w, r.h);
+      const used = (r.tokensOverride !== null && r.tokensOverride !== "") ? Math.max(0, Math.round(Number(r.tokensOverride))) : est;
+      return { ref:r, est, tokens:used };
+    });
+    const imageInTokens = refRows.reduce((a,b)=>a+b.tokens,0);
+
+    const outPerImage = outputTokens(S.w, S.h, S.quality);
+    const outputTokensTotal = outPerImage * S.n;
+    const partialTokens = S.partials * 100 * S.n;
+
+    const cText = textTokens * RATES.textIn[tier]/1e6;
+    const cIn   = imageInTokens * RATES.imageIn[tier]/1e6;
+    const cOut  = outputTokensTotal * RATES.imageOut[tier]/1e6;
+    const cPart = partialTokens * RATES.imageOut[tier]/1e6;
+
+    const stdTotal   = textTokens*RATES.textIn.std/1e6 + imageInTokens*RATES.imageIn.std/1e6 + (outputTokensTotal+partialTokens)*RATES.imageOut.std/1e6;
+    const batchTotal = textTokens*RATES.textIn.batch/1e6 + imageInTokens*RATES.imageIn.batch/1e6 + (outputTokensTotal+partialTokens)*RATES.imageOut.batch/1e6;
+
+    return { textTokens, imageInTokens, refRows, outPerImage, outputTokensTotal, partialTokens,
+      cText, cIn, cOut, cPart, total:cText+cIn+cOut+cPart,
+      tokenTotal:textTokens+imageInTokens+outputTokensTotal+partialTokens, stdTotal, batchTotal };
+  }
+
+  /* =========================================================
+     STATIC TEXT
+  ========================================================= */
+  function applyStatic(){
+    document.documentElement.lang = t("html_lang");
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.getAttribute("data-i18n")); });
+    document.querySelectorAll("[data-i18n-html]").forEach(el => { el.innerHTML = t(el.getAttribute("data-i18n-html")); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = t(el.getAttribute("data-i18n-ph")); });
+    $("tourX").setAttribute("aria-label", t("t_close"));
+    $("tourSkip").textContent = t("t_skip");
+    $("tourPrev").textContent = t("t_prev");
+    document.querySelectorAll("#lang button").forEach(b => b.classList.toggle("on", b.dataset.lang === S.lang));
+  }
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+  function renderTiles(){
+    const el = $("tiles"); el.innerHTML = "";
+    PRESETS.forEach(p => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "tile" + (S.presetKey === p.key ? " on" : "");
+      const ratio = p.w / p.h;
+      const k = Math.min(42/ratio, 30);
+      const tk = outputTokens(p.w, p.h, S.quality);
+      b.innerHTML =
+        '<div class="ratio"><i style="width:'+(ratio*k).toFixed(1)+'px;height:'+k.toFixed(1)+'px"></i></div>'+
+        '<div class="tl">'+t(p.key)+'</div>'+
+        '<div class="td">'+p.w+'×'+p.h+'</div>'+
+        '<div class="tk">'+nf(tk)+' tok</div>';
+      b.onclick = () => { S.presetKey = p.key; S.w = p.w; S.h = p.h; $("w").value = p.w; $("h").value = p.h; renderTiles(); render(); };
+      el.appendChild(b);
+    });
+  }
+
+  function renderQuality(){
+    const el = $("quality"); el.innerHTML = "";
+    QUALITIES.forEach(q => {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (S.quality === q) b.classList.add("on");
+      const cost = outputTokens(S.w, S.h, q) * RATES.imageOut.std / 1e6;
+      b.innerHTML = t("q_"+q) + "<small>" + moneyShort(cost) + "</small>";
+      b.onclick = () => { S.quality = q; renderQuality(); renderTiles(); render(); };
+      el.appendChild(b);
+    });
+  }
+
+  function renderRefs(){
+    const el = $("refs"); el.innerHTML = "";
+    $("refHint").textContent = t("s2_hint", { n: S.refs.length });
+
+    S.refs.forEach((r,i) => {
+      const row = document.createElement("div");
+      row.className = "ref";
+      const est = inputImageTokens(r.w, r.h);
+      const val = (r.tokensOverride !== null && r.tokensOverride !== "") ? r.tokensOverride : est;
+      const isBase = r.role === "base";
+      const pxText = (r.w && r.h)
+        ? t(val === est ? "ref_px_est" : "ref_px_ovr", { w:r.w, h:r.h })
+        : (val === est ? t("ref_px_est",{w:"?",h:"?"}) : t("ref_px_ovr",{w:"?",h:"?"}));
+      row.innerHTML =
+        '<img src="'+r.url+'" alt="" />'+
+        '<div style="min-width:0">'+
+          '<div class="n1">'+r.name+'</div>'+
+          '<div class="n2">'+pxText+'</div>'+
+          '<button class="role '+(isBase?"":"ref")+'" title="'+t(isBase?"role_base_title":"role_ref_title")+'">'+t(isBase?"role_base":"role_ref")+'</button>'+
+        '</div>'+
+        '<div class="tok-input">'+
+          '<input type="number" min="0" step="1" value="'+val+'" />'+
+          '<span class="u">tok</span>'+
+          '<button class="x-btn">×</button>'+
+        '</div>';
+
+      row.querySelector(".role").onclick = () => {
+        r.role = (r.role === "base") ? "ref" : "base";
+        renderRefs(); render();
+      };
+      row.querySelector("input").addEventListener("input", e => {
+        r.tokensOverride = e.target.value === "" ? null : e.target.value;
+        const v2 = (r.tokensOverride !== null) ? r.tokensOverride : est;
+        row.querySelector(".n2").textContent = (r.w && r.h)
+          ? t(v2 === est ? "ref_px_est" : "ref_px_ovr", { w:r.w, h:r.h })
+          : t(v2 === est ? "ref_px_est" : "ref_px_ovr", { w:"?", h:"?" });
+        render();
+      });
+      row.querySelector(".x-btn").onclick = () => { S.refs.splice(i,1); renderRefs(); render(); };
+      el.appendChild(row);
+    });
+  }
+
+  function render(){
+    const c = compute();
+
+    $("total").textContent = moneyLong(c.total);
+    $("moTotal").textContent = moneyLong(c.total);
+    $("totalSub").textContent = S.n > 1
+      ? t("sum_per_image_n", { cost: money(c.total/S.n), tok: nf(c.tokenTotal) })
+      : t("sum_per_image", { tok: nf(c.tokenTotal) });
+
+    const rows = [
+      { cls:"sw-text", name:t("bd_text"), tok:c.textTokens, cost:c.cText, rate:RATES.textIn.std },
+      { cls:"sw-in", name:t("bd_in"), tok:c.imageInTokens, cost:c.cIn, rate:RATES.imageIn.std },
+      { cls:"sw-out", name:t("bd_out"), tok:c.outputTokensTotal, cost:c.cOut, rate:RATES.imageOut.std }
+    ];
+    if (c.partialTokens > 0) rows.push({ cls:"sw-part", name:t("bd_part"), tok:c.partialTokens, cost:c.cPart, rate:RATES.imageOut.std });
+
+    $("breakdown").innerHTML = rows.map((r,idx) => {
+      const isOut = idx === 2;
+      const sub = (isOut && S.n > 1)
+        ? t("bd_sub_n", { tok:nf(r.tok), per:nf(c.outPerImage), n:S.n, rate:r.rate.toFixed(2) })
+        : t("bd_sub", { tok:nf(r.tok), rate:r.rate.toFixed(2) });
+      return '<div class="bd-row"><div class="k"><span class="sw '+r.cls+'"></span>'+r.name+'</div>'+
+             '<div class="v">'+money(r.cost)+'</div><div class="sub">'+sub+'</div></div>';
+    }).join("");
+
+    const chips = [
+      '<span class="chip"><b>'+S.w+'×'+S.h+'</b></span>',
+      '<span class="chip">'+t("chip_q",{q:t("q_"+S.quality).toLowerCase()})+'</span>',
+      '<span class="chip">'+t("chip_out",{tok:nf(c.outPerImage)})+'</span>'
+    ];
+    if (S.refs.length) chips.push('<span class="chip">'+t("chip_ref",{n:S.refs.length})+'</span>');
+    if (S.n > 1) chips.push('<span class="chip">'+t("chip_imgs",{n:S.n})+'</span>');
+    $("chips").innerHTML = chips.join("");
+
+    $("stdCost").textContent = money(c.stdTotal);
+    $("batchCost").textContent = money(c.batchTotal);
+    $("outHint").textContent = t("out_hint", { tok:nf(c.outPerImage), cost:money(c.outPerImage*RATES.imageOut.std/1e6) });
+    $("promptChars").textContent = t("s1_chars", { n:nf((S.prompt||"").length), tok:nf(c.textTokens) });
+    $("promptMeta").textContent = c.textTokens ? t("s1_meta",{tok:nf(c.textTokens), cost:money(c.cText)}) : t("optional");
+
+    // size note
+    const problems = [];
+    if (S.w % 16 || S.h % 16) problems.push(t("size_warn_mul"));
+    if (Math.max(S.w,S.h) > 3840) problems.push(t("size_warn_long"));
+    const ar = Math.max(S.w,S.h)/Math.min(S.w,S.h);
+    if (ar > 3) problems.push(t("size_warn_ar"));
+    const px = S.w*S.h;
+    if (px < 655360) problems.push(t("size_warn_min"));
+    if (px > 8294400) problems.push(t("size_warn_max"));
+    const note = $("sizeNote");
+    note.className = "note " + (problems.length ? "warn" : "ok");
+    note.innerHTML = problems.length
+      ? "<span>⚠</span><span>"+t("size_bad",{list:problems.join("; ")})+"</span>"
+      : "<span>ⓘ</span><span>"+t("size_ok",{px:nf(px), ar:ar.toFixed(2)})+"</span>";
+
+    // ref note
+    const rn = $("refNote");
+    rn.className = "note ok";
+    rn.innerHTML = S.refs.length
+      ? "<span>ⓘ</span><span>"+t("ref_some",{ n:S.refs.length, tok:nf(c.imageInTokens), cost:money(c.cIn), pct:Math.round((c.cIn/(c.total||1))*100) })+"</span>"
+      : "<span>ⓘ</span><span>"+t("ref_none")+"</span>";
+  }
+
+  /* =========================================================
+     IMAGE INPUT
+  ========================================================= */
+  function addFiles(files){
+    const list = Array.from(files || []).filter(f => f.type && f.type.indexOf("image/") === 0);
+    if (!list.length) return;
+    list.forEach(file => {
+      if (S.refs.length >= 16){ toast(t("toast_ref_limit")); return; }
+      const reader = new FileReader();
+      reader.onload = e => {
+        const url = e.target.result;
+        const img = new Image();
+        img.onload = () => {
+          S.refs.push({
+            name: file.name || "image",
+            w: img.naturalWidth || img.width,
+            h: img.naturalHeight || img.height,
+            url: url,
+            tokensOverride: null,
+            role: S.refs.length === 0 ? "base" : "ref"
+          });
+          renderRefs(); render();
+        };
+        img.src = url;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* =========================================================
+     WIRING
+  ========================================================= */
+  $("prompt").addEventListener("input", e => { S.prompt = e.target.value; render(); });
+  $("textTokensOverride").addEventListener("input", e => {
+    S.textTokensOverride = e.target.value === "" ? null : e.target.value; render();
+  });
+  $("w").addEventListener("input", e => { S.w = Math.max(1, parseInt(e.target.value||"0",10)); S.presetKey = null; renderTiles(); render(); });
+  $("h").addEventListener("input", e => { S.h = Math.max(1, parseInt(e.target.value||"0",10)); S.presetKey = null; renderTiles(); render(); });
+  $("n").addEventListener("input", e => { S.n = Math.min(10, Math.max(1, parseInt(e.target.value||"1",10))); render(); });
+  $("partials").addEventListener("change", e => { S.partials = parseInt(e.target.value,10); render(); });
+  $("model").addEventListener("change", () => toast(t("toast_same_rates")));
+
+  const drop = $("drop"), file = $("file");
+  drop.onclick = e => { if (e.target !== file) file.click(); };
+  drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") file.click(); };
+  file.onchange = e => { addFiles(e.target.files); file.value = ""; };
+  ["dragenter","dragover"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); drop.classList.add("over"); }));
+  ["dragleave","drop"].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); if(ev==="dragleave") drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => { drop.classList.remove("over"); addFiles(e.dataTransfer.files); });
+  window.addEventListener("paste", e => {
+    const items = (e.clipboardData||{}).items || [];
+    const files = [];
+    for (const it of items) if (it.kind === "file" && it.type.indexOf("image/") === 0){ const f = it.getAsFile(); if (f) files.push(f); }
+    if (files.length){ e.preventDefault(); addFiles(files); toast(t("toast_from_clip")); }
+  });
+
+  $("moGo").onclick = () => $("summary").scrollIntoView({behavior:"smooth", block:"start"});
+
+  $("copy").onclick = () => {
+    const c = compute();
+    const lines = [
+      t("copy_title", { m:$("model").value }),
+      t("copy_line1", { w:S.w, h:S.h, q:t("q_"+S.quality).toLowerCase(), n:S.n }),
+      "",
+      t("copy_text")+"   "+String(nf(c.textTokens)).padStart(8)+" tok  "+moneyLong(c.cText),
+      t("copy_in")+"  "+String(nf(c.imageInTokens)).padStart(8)+" tok  "+moneyLong(c.cIn),
+      t("copy_out")+" "+String(nf(c.outputTokensTotal)).padStart(8)+" tok  "+moneyLong(c.cOut)
+    ];
+    if (c.partialTokens) lines.push(t("copy_part")+"     "+String(nf(c.partialTokens)).padStart(8)+" tok  "+moneyLong(c.cPart));
+    lines.push(t("copy_total")+"        "+String(nf(c.tokenTotal)).padStart(8)+" tok  "+moneyLong(c.total));
+    lines.push(t("copy_batch")+"    "+moneyLong(c.batchTotal));
+    const text = lines.join("\n");
+    const done = () => toast(t("toast_copied"));
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+    else fallbackCopy(text, done);
+  };
+  function fallbackCopy(text, done){
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch(_) { window.prompt("Copy:", text); }
+    document.body.removeChild(ta);
+  }
+
+  $("demo").onclick = () => {
+    S.prompt = ""; $("prompt").value = "";
+    S.textTokensOverride = 181; $("textTokensOverride").value = 181;
+    S.w = 1024; S.h = 1024; S.presetKey = "pr_square"; S.quality = "high"; S.n = 1; S.partials = 0;
+    $("w").value = 1024; $("h").value = 1024; $("n").value = 1; $("partials").value = "0";
+    S.refs = [{
+      name: t("role_base"),
+      w:2048, h:1024, tokensOverride:2056, role:"base",
+      url:"data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40"><rect width="80" height="40" fill="#1a2130"/><text x="40" y="25" font-size="11" fill="#ffb347" text-anchor="middle" font-family="monospace">ref</text></svg>')
+    }];
+    renderTiles(); renderQuality(); renderRefs(); render();
+    toast(t("toast_demo"));
+  };
+
+  $("parseUsage").onclick = () => {
+    const raw = $("usageBlob").value || "";
+    if (!raw.trim()) return toast(t("toast_paste_first"));
+    const grab = re => { const m = raw.match(re); return m ? m[1].replace(/[",_\s]/g,"") : null; };
+    const textTok = grab(/text_tokens"?\s*[:=]\s*"?([0-9,\s"]+)/i);
+    const imgTok  = grab(/image_tokens"?\s*[:=]\s*"?([0-9,\s"]+)/i);
+    const inTok   = grab(/(?:^|[^_])input_tokens"?\s*[:=]\s*"?([0-9,\s"]+)/i);
+    let found = 0;
+    if (textTok){ S.textTokensOverride = +textTok; $("textTokensOverride").value = textTok; found++; }
+    if (imgTok || (!textTok && inTok)){
+      const v = +(imgTok || inTok);
+      if (!S.refs.length){
+        S.refs.push({ name:t("role_ref"), w:0, h:0, tokensOverride:v, role:"ref",
+          url:"data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="#1a2130"/><text x="40" y="46" font-size="11" fill="#ffb347" text-anchor="middle" font-family="monospace">ref</text></svg>') });
+      } else S.refs[0].tokensOverride = v;
+      found++;
+    }
+    renderRefs(); render();
+    toast(found ? t("toast_copied_usage",{n:found}) : t("toast_no_usage"));
+  };
+
+  /* =========================================================
+     LANGUAGE
+  ========================================================= */
+  function setLang(lang){
+    S.lang = (lang === "en") ? "en" : "pl";
+    LOC = S.lang === "pl" ? "pl-PL" : "en-US";
+    try { localStorage.setItem("gic_lang", S.lang); } catch(_){}
+    document.documentElement.lang = S.lang;
+    applyStatic();
+    renderTiles(); renderQuality(); renderRefs(); render();
+    if (tour.open) showStep(tour.i, true);
+  }
+  document.querySelectorAll("#lang button").forEach(b => b.onclick = () => setLang(b.dataset.lang));
+
+  /* =========================================================
+     TOUR
+  ========================================================= */
+  const ART = {
+    hello:'<svg viewBox="0 0 300 84"><rect x="8" y="10" width="96" height="64" rx="8" fill="#101722" stroke="#2b3445"/><circle cx="34" cy="32" r="9" fill="#ffb347" opacity=".9"/><path d="M16 66l24-22 16 14 12-10 24 18" stroke="#4a5a76" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M118 42h28" stroke="#ffb347" stroke-width="3" stroke-linecap="round"/><path d="M140 34l8 8-8 8" stroke="#ffb347" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="158" y="10" width="96" height="64" rx="8" fill="#1b2230" stroke="#ffb347" stroke-opacity=".55"/><text x="206" y="50" font-size="26" text-anchor="middle" fill="#ffb347" font-family="monospace">$</text><text x="206" y="66" font-size="9" text-anchor="middle" fill="#8b97ac" font-family="monospace">0.070033</text></svg>',
+    change:'<svg viewBox="0 0 300 84"><rect x="6" y="12" width="84" height="60" rx="7" fill="#101722" stroke="#2b3445"/><circle cx="30" cy="34" r="8" fill="#8b97ac"/><path d="M12 64l20-18 14 12 10-8 22 14" stroke="#4a5a76" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="48" y="82" font-size="8.5" text-anchor="middle" fill="#8b97ac" font-family="sans-serif">twoje zdjęcie / your photo</text><path d="M100 42h30" stroke="#ffb347" stroke-width="3" stroke-linecap="round"/><path d="M124 34l8 8-8 8" stroke="#ffb347" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="146" y="12" width="84" height="60" rx="7" fill="#1d2433" stroke="#ffb347" stroke-opacity=".6"/><circle cx="170" cy="34" r="8" fill="#ffb347"/><path d="M152 64l20-18 14 12 10-8 22 14" stroke="#ffc98a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M212 20l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffb347"/><circle cx="256" cy="30" r="7" fill="none" stroke="#ffb347" stroke-width="2"/><path d="M240 66c6-10 26-10 32 0" stroke="#ffb347" stroke-width="2" fill="none" stroke-linecap="round"/></svg>',
+    inspiration:'<svg viewBox="0 0 300 84"><rect x="4" y="10" width="62" height="44" rx="6" fill="#101722" stroke="#2b3445"/><circle cx="22" cy="26" r="6" fill="#8b97ac"/><path d="M9 50l14-12 10 8 8-6 16 10" stroke="#4a5a76" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="35" y="66" font-size="8" text-anchor="middle" fill="#8b97ac" font-family="sans-serif">pies / dog</text><rect x="4" y="70" width="0" height="0"/><rect x="74" y="10" width="62" height="44" rx="6" fill="#1a2130" stroke="#a78bfa" stroke-opacity=".6"/><circle cx="92" cy="26" r="6" fill="#c4b5fd"/><path d="M79 50l14-12 10 8 8-6 16 10" stroke="#c4b5fd" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="105" y="66" font-size="8" text-anchor="middle" fill="#c4b5fd" font-family="sans-serif">komiks / comic</text><path d="M144 32h22" stroke="#ffb347" stroke-width="2.5" stroke-linecap="round"/><path d="M161 26l7 6-7 6" stroke="#ffb347" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="176" y="10" width="72" height="44" rx="6" fill="#1d2433" stroke="#ffb347" stroke-opacity=".6"/><circle cx="196" cy="26" r="6" fill="#ffb347"/><path d="M182 50l14-12 10 8 8-6 16 10" stroke="#ffc98a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="212" y="66" font-size="8" text-anchor="middle" fill="#ffb347" font-family="sans-serif">wynik / result</text><path d="M258 22l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#ffb347"/></svg>',
+    bye:'<svg viewBox="0 0 300 84"><rect x="10" y="16" width="60" height="52" rx="8" fill="#101722" stroke="#2b3445"/><path d="M26 56V38M42 56V30M58 56V46" stroke="#ffb347" stroke-width="4" stroke-linecap="round"/><rect x="86" y="16" width="60" height="52" rx="8" fill="#101722" stroke="#2b3445"/><text x="116" y="50" font-size="20" text-anchor="middle" fill="#4ade80" font-family="monospace">$</text><rect x="162" y="16" width="60" height="52" rx="8" fill="#101722" stroke="#2b3445"/><path d="M176 44l10 12 22-26" stroke="#4ade80" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M246 24l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#ffb347"/></svg>'
+  };
+
+  const tour = { open:false, i:0, steps:[], ro:null };
+
+  const root = $("tourRoot"), card = $("tourCard");
+  const svgEl = $("tourSvg"), holeEl = $("tourHole"), ringEl = $("tourRing"),
+        pulseEl = $("tourPulse"), arrowEl = $("tourArrow");
+
+  function tourSteps(){ return t("tour"); }
+
+  function openTour(startAt){
+    tour.steps = tourSteps();
+    tour.i = startAt || 0;
+    tour.open = true;
+    root.classList.add("on");
+    document.body.style.overflow = "";
+    showStep(tour.i);
+  }
+  function closeTour(markSeen){
+    tour.open = false;
+    root.classList.remove("on");
+    if (markSeen !== false){ try { localStorage.setItem("gic_tour_done","1"); } catch(_){} }
+  }
+
+  function showStep(i, keepScroll){
+    const steps = tourSteps();
+    tour.i = Math.max(0, Math.min(steps.length - 1, i));
+    const st = steps[tour.i];
+
+    // chrome
+    $("tourCount").textContent = (tour.i + 1) + " / " + steps.length;
+    $("tourDots").innerHTML = steps.map((_, n) => '<i class="'+(n === tour.i ? "on" : "")+'"></i>').join("");
+    $("tourTitle").textContent = st.title;
+    $("tourBody").innerHTML = st.body;
+    $("tourNext").textContent = tour.i === steps.length - 1 ? t("t_done") : (tour.i === 0 ? t("t_start") : t("t_next"));
+    $("tourPrev").style.display = tour.i === 0 ? "none" : "";
+
+    const art = $("tourArt");
+    if (st.art && ART[st.art]){ art.innerHTML = ART[st.art]; art.style.display = ""; }
+    else { art.innerHTML = ""; art.style.display = "none"; }
+
+    // spotlight target
+    const target = st.target ? document.querySelector(st.target) : null;
+    tour.target = target;
+    if (target && !keepScroll){
+      const rh = target.getBoundingClientRect().height;
+      const block = (rh > window.innerHeight * 0.42) ? "start" : "center";
+      target.scrollIntoView({ behavior:"smooth", block: block });
+      setTimeout(() => position(), 380);
+    }
+    position();
+    requestAnimationFrame(position);
+  }
+
+  function position(){
+    if (!tour.open) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const pad = 8;
+    const target = tour.target;
+    const cw = Math.min(400, vw - 28);
+    card.style.width = cw + "px";
+    const ch = card.offsetHeight || 240;
+
+    // ---- 1. raw hole around the target
+    let hole = null;
+    if (target){
+      const r = target.getBoundingClientRect();
+      if (r.width > 2 && r.height > 2 && r.bottom > 0 && r.top < vh){
+        hole = {
+          x: Math.max(4, r.left - pad),
+          y: Math.max(4, r.top - pad),
+          w: Math.min(vw - 8, r.width + pad*2),
+          h: Math.min(vh - 8, r.height + pad*2)
+        };
+      }
+    }
+
+    // ---- 2. decide where the card goes (never overlapping the hole)
+    let cx, cy;
+    if (!hole){
+      cx = (vw - cw) / 2;
+      cy = Math.max(16, (vh - ch) / 2);
+    } else {
+      const below = hole.y + hole.h + 18;
+      const above = hole.y - ch - 18;
+      const fitsBelow = below + ch <= vh - 12;
+      const fitsAbove = above >= 12;
+
+      if (fitsBelow){
+        cy = below;
+      } else if (fitsAbove){
+        cy = above;
+      } else {
+        // squeeze: keep the card on screen and shorten the spotlight
+        cy = Math.max(12, vh - ch - 12);
+        const roomAbove = cy - 14;
+        const roomBelow = (vh - 12) - (hole.y + 12 + 18 + ch);
+        if (roomAbove >= 70 && roomAbove >= roomBelow){
+          hole.h = Math.max(60, roomAbove - hole.y);
+        } else if (roomBelow >= 70){
+          // move the hole down to just under the card
+          hole.y = cy + ch + 18;
+          hole.h = Math.max(60, (vh - 12) - hole.y);
+        } else {
+          hole.h = Math.max(60, Math.min(hole.h, vh - hole.y - 12));
+        }
+      }
+      cx = hole.x + hole.w/2 - cw/2;
+      cx = Math.max(14, Math.min(vw - cw - 14, cx));
+    }
+    card.style.left = cx + "px";
+    card.style.top = cy + "px";
+
+    // ---- 3. paint the spotlight
+    if (hole){
+      [holeEl, ringEl, pulseEl].forEach(el => {
+        el.setAttribute("x", hole.x); el.setAttribute("y", hole.y);
+        el.setAttribute("width", hole.w); el.setAttribute("height", hole.h);
+      });
+      ringEl.setAttribute("opacity",".95");
+      pulseEl.setAttribute("opacity",".5");
+    } else {
+      [holeEl, ringEl, pulseEl].forEach(el => {
+        el.setAttribute("x", 0); el.setAttribute("y", 0);
+        el.setAttribute("width", 0); el.setAttribute("height", 0);
+      });
+      ringEl.setAttribute("opacity","0");
+      pulseEl.setAttribute("opacity","0");
+    }
+
+    // ---- 4. arrow from the card to the spotlight
+    if (hole){
+      const cardRect = { x:cx, y:cy, w:cw, h:ch };
+      const hcx = hole.x + hole.w/2, hcy = hole.y + hole.h/2;
+
+      // nearest point on the card toward the hole
+      let sx = Math.max(cardRect.x, Math.min(hcx, cardRect.x + cardRect.w));
+      let sy;
+      if (hcy < cardRect.y) sy = cardRect.y;
+      else if (hcy > cardRect.y + cardRect.h) sy = cardRect.y + cardRect.h;
+      else sy = (hcx < cardRect.x) ? cardRect.y + cardRect.h/2 : cardRect.y + cardRect.h/2;
+
+      // nearest point on the hole toward the card
+      const ex = Math.max(hole.x + 4, Math.min(sx, hole.x + hole.w - 4));
+      let ey;
+      if (sy <= hole.y) ey = hole.y;
+      else if (sy >= hole.y + hole.h) ey = hole.y + hole.h;
+      else ey = (hcy < cardRect.y) ? hole.y + hole.h : hole.y;
+
+      const dx = ex - sx, dy = ey - sy;
+      const len = Math.hypot(dx, dy);
+      if (len < 16){
+        arrowEl.setAttribute("opacity","0");
+      } else {
+        const gap = 12;
+        const ex2 = ex - dx/len*gap, ey2 = ey - dy/len*gap;
+        const mx = sx + dx*0.5, my = sy + dy*0.5 - Math.min(44, Math.abs(dx)*0.16 + 12);
+        arrowEl.setAttribute("d", "M"+sx.toFixed(1)+","+sy.toFixed(1)+" Q"+mx.toFixed(1)+","+my.toFixed(1)+" "+ex2.toFixed(1)+","+ey2.toFixed(1));
+        arrowEl.setAttribute("opacity","1");
+      }
+    } else {
+      arrowEl.setAttribute("opacity","0");
+    }
+  }
+
+  $("tourNext").onclick = () => {
+    if (tour.i >= tour.steps.length - 1) return closeTour(true);
+    showStep(tour.i + 1);
+  };
+  $("tourPrev").onclick = () => showStep(tour.i - 1);
+  $("tourSkip").onclick = () => closeTour(true);
+  $("tourX").onclick = () => closeTour(true);
+  $("tourBtn").onclick = () => openTour(0);
+
+  window.addEventListener("resize", () => { if (tour.open) position(); });
+  window.addEventListener("scroll", () => { if (tour.open) position(); }, {passive:true});
+  document.addEventListener("keydown", e => {
+    if (!tour.open) return;
+    if (e.key === "Escape") closeTour(true);
+    else if (e.key === "ArrowRight" || e.key === "Enter") $("tourNext").click();
+    else if (e.key === "ArrowLeft") $("tourPrev").click();
+  });
+
+  /* =========================================================
+     BOOT
+  ========================================================= */
+  let savedLang = null, tourSeen = false;
+  try {
+    savedLang = localStorage.getItem("gic_lang");
+    tourSeen = localStorage.getItem("gic_tour_done") === "1";
+  } catch(_){}
+
+  S.lang = savedLang === "en" ? "en" : "pl";
+  LOC = S.lang === "pl" ? "pl-PL" : "en-US";
+  document.documentElement.lang = S.lang;
+
+  applyStatic();
+  renderTiles(); renderQuality(); renderRefs(); render();
+
+  // tutorial on by default (first visit), skippable, and re-openable
+  const forceTour = /[?&]tour=1/.test(location.search);
+  if (forceTour || !tourSeen){
+    setTimeout(() => openTour(0), 650);
+  }
+})();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a4d79df4d954780b',t:'MTc5MjQ5NTA1Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
